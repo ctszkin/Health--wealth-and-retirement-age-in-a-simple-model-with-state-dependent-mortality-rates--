@@ -21,7 +21,7 @@ else
     utility = @(x)(x.^(1-1./par.sigma)-1)./(1-1./par.sigma);
 end
 
-
+%% morbid & retired
 
 % initial value of value function.
 v0=repmat(0,length(par.a),1);
@@ -32,7 +32,7 @@ aMatrix=repmat(par.a,1,length(par.a));
 c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix';
 c(c<0)=nan;
 
-%mr
+
 
 for i=1:maxInteration
     [v1 h0]=max(utility(c)+par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
@@ -49,7 +49,92 @@ v_mr = v0;
 h_mr = h0;
 clear v0 v1 c aMatrix i h0;
 
-% mw
+%% morbid and working
+
+%TODO: add different level of education
+
+v0 = repmat(0,length(par.a),1);
+h0 = repmat(0,length(par.a),1);
+
+aMatrix=repmat(par.a,1,length(par.a));
+
+% change the par.w to wage(edu)
+c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + par.w;
+c(c<0)=nan;
+
+for i=1:maxInteration
+    [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
+    v1 = max(v_t,v_mr);
+    error = max(abs(v0-v1));
+    disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+    if error < maxError;
+        numberOfIteration_mw = i;
+        break;
+    end
+    v0=v1;
+end
+
+v_mw = v0;
+h_mw = h0;
+clear h0 v0 v1 c aMatrix i;
+
+
+%% healthy and retired
+
+v0 = repmat(0,length(par.a),1);
+h0 = repmat(0,length(par.a),1);
+
+
+aMatrix=repmat(par.a,1,length(par.a));
+
+c=(1+par.r)./(1-par.muh).*aMatrix -aMatrix';
+c(c<0)=nan;
+
+for i=1:maxInteration
+    [v1 h0]=max(utility(c)+par.beta.*(1-par.muh-par.theta).*(repmat(v0',length(par.a),1))+par.beta.*par.theta.*(repmat(v_mr',length(par.a),1)) ,[],2);
+    error = max(abs(v0-v1));
+    disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+    if error < maxError;
+        numberOfIteration_hr = i;
+        break;
+    end
+    v0=v1;
+end
+
+v_hr = v0;
+h_hr = h0;
+clear h0 v0 v1 c aMatrix i;
+
+
+%% healthy working
+v0 = repmat(0,length(par.a),1);
+h0 = repmat(0,length(par.a),1);
+
+
+aMatrix=repmat(par.a,1,length(par.a));
+
+c=(1+par.r)./(1-par.muh).*aMatrix -aMatrix' + par.w;
+c(c<0)=nan;
+
+for i=1:maxInteration
+    [v_t h0]=max(utility(c)-par.lambdah +par.beta.*(1-par.muh-par.theta).*(repmat(v0',length(par.a),1))+ par.beta.*par.theta.*(repmat(v_mw',length(par.a),1)),[],2);
+    v1 = max(v_t,v_hr);
+    error = max(abs(v0-v1));
+    disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+    if error < maxError;
+        numberOfIteration_hw = i;
+        break;
+    end
+    v0=v1;
+end
+
+v_hw = v0;
+h_hw = h0;
+clear h0 v0 v1 v_t c aMatrix i;
+
+
+%% ms %%
+
 
 v0 = repmat(0,length(par.a),1);
 h0 = repmat(0,length(par.a),1);
@@ -77,57 +162,10 @@ h_mw = h0;
 clear h0 v0 v1 c aMatrix i;
 
 
-% hr
-v0 = repmat(0,length(par.a),1);
-h0 = repmat(0,length(par.a),1);
+%% end of ms %%
 
 
-aMatrix=repmat(par.a,1,length(par.a));
 
-c=(1+par.r)./(1-par.muh).*aMatrix -aMatrix';
-c(c<0)=nan;
-
-for i=1:maxInteration
-    [v1 h0]=max(utility(c)+par.beta.*(1-par.muh-par.theta).*(repmat(v0',length(par.a),1))+par.beta.*par.theta.*(repmat(v_mr',length(par.a),1)) ,[],2);
-    error = max(abs(v0-v1));
-    disp(['iteration '  int2str(i)  ': '  num2str(error)]);
-    if error < maxError;
-        numberOfIteration_hr = i;
-        break;
-    end
-    v0=v1;
-end
-
-v_hr = v0;
-h_hr = h0;
-clear h0 v0 v1 c aMatrix i;
-
-
-% hw
-v0 = repmat(0,length(par.a),1);
-h0 = repmat(0,length(par.a),1);
-
-
-aMatrix=repmat(par.a,1,length(par.a));
-
-c=(1+par.r)./(1-par.muh).*aMatrix -aMatrix' + par.w;
-c(c<0)=nan;
-
-for i=1:maxInteration
-    [v_t h0]=max(utility(c)-par.lambdah +par.beta.*(1-par.muh-par.theta).*(repmat(v0',length(par.a),1))+ par.beta.*par.theta.*(repmat(v_mw',length(par.a),1)),[],2);
-    v1 = max(v_t,v_hr);
-    error = max(abs(v0-v1));
-    disp(['iteration '  int2str(i)  ': '  num2str(error)]);
-    if error < maxError;
-        numberOfIteration_hw = i;
-        break;
-    end
-    v0=v1;
-end
-
-v_hw = v0;
-h_hw = h0;
-clear h0 v0 v1 v_t c aMatrix i;
 
 % plot(par.a,v_mw,par.a,v_mr,par.a,v_hr,par.a,v_hw);
 legend('morbid working','morbid retired','healthy retired','healthy working','Location','southeast');
