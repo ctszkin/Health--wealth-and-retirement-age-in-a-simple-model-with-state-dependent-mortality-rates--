@@ -3,8 +3,8 @@ tic
 % parSet(rho,lambdam,lambdah,r,w,muh,mum,theta,sigma,a)
 % default parameter 
 % par = parSet(0.1,0.2,0.2,0.05,0.15,0.001,0.02,0.1,1,(0:0.1:20)');
-par = parSet(0.05,0.3,0.2,0.08,2.127,0.001,0.02,0.1,1,(0:0.1:200)');
-
+par = parSet(0.05,0.3,0.2,0.08,2.127,0.001,0.02,0.1,1,(0:0.5:100)');
+educ=0:1;
 maxInteration = 10000;
 maxError = 10^-4;
 
@@ -21,7 +21,7 @@ else
     utility = @(x)(x.^(1-1./par.sigma)-1)./(1-1./par.sigma);
 end
 
-%% morbid & retired
+%% morbid & retired stage
 
 % initial value of value function.
 v0=repmat(0,length(par.a),1);
@@ -29,10 +29,9 @@ h0 = repmat(0,length(par.a),1);
 
 aMatrix=repmat(par.a,1,length(par.a));
 
+
 c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix';
 c(c<0)=nan;
-
-
 
 for i=1:maxInteration
     [v1 h0]=max(utility(c)+par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
@@ -45,21 +44,83 @@ for i=1:maxInteration
     v0=v1;
 end
 
-v_mr = v0;
-h_mr = h0;
+v_mr(:,1) = v0;
+h_mr(:,1) = h0;
 clear v0 v1 c aMatrix i h0;
 
-%% morbid and working
+%% morbid and working stage
 
-%TODO: add different level of education
+% method 1
+% for edu=0:1
+%     v0 = repmat(0,length(par.a),1);
+%     h0 = repmat(0,length(par.a),1);
+% 
+%     aMatrix=repmat(par.a,1,length(par.a));
+% 
+% 
+%     c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + wage(edu);
+%     c(c<0)=nan;
+% 
+%     for i=1:maxInteration
+%         [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
+%         v1 = max(v_t,v_mr);
+%         error = max(abs(v0-v1));
+%         disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+%         if error < maxError;
+%             numberOfIteration_mw = i;
+%             break;
+%         end;
+%         v0=v1;
+%     end;
+% 
+%     v_mw(:,edu+1) = v0;
+%     h_mw(:,edu+1) = h0;
+%     clear h0 v0 v1 c aMatrix i;
+% end;
 
-v0 = repmat(0,length(par.a),1);
-h0 = repmat(0,length(par.a),1);
+% method 2 ( easiser to extend )
+
+v0 = repmat(0,[length(par.a) length(educ)]); 
+h0 = repmat(0,[length(par.a) length(educ)]);
+
+at_Matrix = permute(repmat(par.a,1,length(par.a)),[1 3 2] );
+at_plus1_matrix = permute(repmat(par.a,1,length(par.a)),[2 3 1] );
+edu = repmat(educ,[ length(par.a) 1 length(par.a) ] );
+
+
+c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 2 1 ]  ) + wage(edu); % aMatrix is at+1
+c(c<0)=nan;
+
+for i=1:maxInteration
+    [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).* repmat(permute(v0,[3 2 1]), [length(par.a) 1 1]) ,[],3  ); %v0' at+1
+       
+    v1 = max(v_t,repmat(v_mr,[1 2]));
+    error = max(abs(v0-v1));
+    disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+    if error < maxError;
+        numberOfIteration_mw = i;
+        break;
+    end;
+    v0=v1;
+end;
+
+v_mw = v0;
+h_mw = h0;
+clear h0 v0 v1 c aMatrix i;
+
+
+
+
+
+%% morbid and schooling stage
+
+
+v0 = repmat(0,length(par.a),2);
+h0 = repmat(0,length(par.a),2);
 
 aMatrix=repmat(par.a,1,length(par.a));
 
-% change the par.w to wage(edu)
-c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + par.w;
+c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + wage(edu);
 c(c<0)=nan;
 
 for i=1:maxInteration
@@ -70,13 +131,15 @@ for i=1:maxInteration
     if error < maxError;
         numberOfIteration_mw = i;
         break;
-    end
+    end;
     v0=v1;
-end
+end;
 
-v_mw = v0;
-h_mw = h0;
+v_mw(:,edu+1) = v0;
+h_mw(:,edu+1) = h0;
 clear h0 v0 v1 c aMatrix i;
+
+
 
 
 %% healthy and retired
