@@ -3,8 +3,8 @@ tic
 % parSet(rho,lambdam,lambdah,r,w,muh,mum,theta,sigma,a)
 % default parameter 
 % par = parSet(0.1,0.2,0.2,0.05,0.15,0.001,0.02,0.1,1,(0:0.1:20)');
-par = parSet(0.05,0.3,0.2,0.08,2.127,0.001,0.02,0.1,1,(0:0.5:100)');
-educ=0:1;
+par = parSet(0.05,0.3,0.2,0.08,2.127,0.001,0.02,0.1,1,(0:0.5:100)',(0:1)');
+
 maxInteration = 10000;
 maxError = 10^-4;
 
@@ -24,17 +24,17 @@ end
 %% morbid & retired stage
 
 % initial value of value function.
-v0=repmat(0,length(par.a),1);
+v0 = repmat(0,length(par.a),1);
 h0 = repmat(0,length(par.a),1);
 
 aMatrix=repmat(par.a,1,length(par.a));
 
 
-c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix';
+c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix';  % aMatrix <-> at  ; aMatrix' <-> at+1 
 c(c<0)=nan;
 
 for i=1:maxInteration
-    [v1 h0]=max(utility(c)+par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
+    [v1 h0]=max(utility(c)+par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);  
     error = max(abs(v0-v1));
     disp(['iteration '  int2str(i)  ': '  num2str(error)]);
     if error < maxError;
@@ -51,6 +51,9 @@ clear v0 v1 c aMatrix i h0;
 %% morbid and working stage
 
 % method 1
+% loop over different value of education. Easy to code but difficult to
+% extend
+%
 % for edu=0:1
 %     v0 = repmat(0,length(par.a),1);
 %     h0 = repmat(0,length(par.a),1);
@@ -78,21 +81,33 @@ clear v0 v1 c aMatrix i h0;
 %     clear h0 v0 v1 c aMatrix i;
 % end;
 
+
+
 % method 2 ( easiser to extend )
 
-v0 = repmat(0,[length(par.a) length(educ)]); 
-h0 = repmat(0,[length(par.a) length(educ)]);
+% 1st dimension: asset (state variable)
+% 2nd dimension: education (state variable)
+% 3rd dimension: at+1 (control state variable)
+% so the dimension would be [length(par.a) length(par.edu) length(par.a)]
+v0 = repmat(0,[length(par.a) length(par.edu)]); 
+h0 = repmat(0,[length(par.a) length(par.edu)]);
 
+% create the 3rd dimension for control state varible. Since it is still
+% par.a, so we use repmat(par.a,...) to createthe matrix
 at_Matrix = permute(repmat(par.a,1,length(par.a)),[1 3 2] );
 at_plus1_matrix = permute(repmat(par.a,1,length(par.a)),[2 3 1] );
-edu = repmat(educ,[ length(par.a) 1 length(par.a) ] );
+
+% create an edu with correct dimensionality 
+edu = repmat(par.edu',[ length(par.a) 1 length(par.a) ] );
 
 
-c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 2 1 ]  ) + wage(edu); % aMatrix is at+1
+c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 2 1 ]  ) + wage(edu); 
 c(c<0)=nan;
 
 for i=1:maxInteration
-    [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).* repmat(permute(v0,[3 2 1]), [length(par.a) 1 1]) ,[],3  ); %v0' at+1
+    %
+    vt_plus1 = repmat(permute(v0,[3 2 1]), [length(par.a) 1 1]) ;
+    [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).* vt_plus1 ,[],3  ); 
        
     v1 = max(v_t,repmat(v_mr,[1 2]));
     error = max(abs(v0-v1));
@@ -108,24 +123,26 @@ v_mw = v0;
 h_mw = h0;
 clear h0 v0 v1 c aMatrix i;
 
-
-
-
-
 %% morbid and schooling stage
 
+v0 = repmat(0,[length(par.a) length(par.edu)]); 
+h0 = repmat(0,[length(par.a) length(par.edu)]);
 
-v0 = repmat(0,length(par.a),2);
-h0 = repmat(0,length(par.a),2);
+at_Matrix = permute(repmat(par.a,1,length(par.a)),[1 3 2] );
+at_plus1_matrix = permute(repmat(par.a,1,length(par.a)),[2 3 1] );
+edu = repmat(par.edu,[ length(par.a) 1 length(par.a) ] );
 
-aMatrix=repmat(par.a,1,length(par.a));
-
-c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + wage(edu);
+c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 2 1 ]) ; 
 c(c<0)=nan;
 
+
 for i=1:maxInteration
-    [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
-    v1 = max(v_t,v_mr);
+    
+    vt_plus1 = repmat(permute(v0(:,[2:end end]),[3 2 1]), [length(par.a) 1 1]) ;
+    
+    [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*vt_plus1  ,[],3  );
+       
+    v1 = max(v_t,v_mw);
     error = max(abs(v0-v1));
     disp(['iteration '  int2str(i)  ': '  num2str(error)]);
     if error < maxError;
@@ -135,8 +152,8 @@ for i=1:maxInteration
     v0=v1;
 end;
 
-v_mw(:,edu+1) = v0;
-h_mw(:,edu+1) = h0;
+v_ms = v0;
+h_ms = h0;
 clear h0 v0 v1 c aMatrix i;
 
 
@@ -147,7 +164,7 @@ clear h0 v0 v1 c aMatrix i;
 v0 = repmat(0,length(par.a),1);
 h0 = repmat(0,length(par.a),1);
 
-
+           
 aMatrix=repmat(par.a,1,length(par.a));
 
 c=(1+par.r)./(1-par.muh).*aMatrix -aMatrix';

@@ -1,4 +1,4 @@
-function par = parSet(rho,lambdam,lambdah,r,w,muh,mum,theta,sigma,a)
+function par = parSet(rho,lambdam,lambdah,r,w,muh,mum,theta,sigma,a,edu)
     par.rho=rho;
     par.beta=1/(1+rho);
     par.lambdam=lambdam;
@@ -10,4 +10,5 @@ function par = parSet(rho,lambdam,lambdah,r,w,muh,mum,theta,sigma,a)
     par.theta=theta;
     par.sigma=sigma;
     par.a=a;
+    par.edu=edu;
 end
