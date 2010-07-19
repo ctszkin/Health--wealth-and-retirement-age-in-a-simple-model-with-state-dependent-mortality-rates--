@@ -1,9 +1,9 @@
 clear;clc;
 tic
-% parSet(rho,lambdam,lambdah,r,w,muh,mum,theta,sigma,a)
+% parSet(rho,lambdam,lambdah,r,wage,max_edu,muh,mum,theta,sigma,a)
 % default parameter 
 % par = parSet(0.1,0.2,0.2,0.05,0.15,0.001,0.02,0.1,1,(0:0.1:20)');
-par = parSet(0.05,0.3,0.2,0.08,2.127,0.001,0.02,0.1,1,(0:0.5:100)',(0:1)');
+par = parSet(0.05,0.3,0.2,0.08,0.068,2,0.001,0.02,0.1,1,(0:0.5:100)',(0:3)');
 
 maxInteration = 10000;
 maxError = 10^-4;
@@ -48,42 +48,41 @@ v_mr(:,1) = v0;
 h_mr(:,1) = h0;
 clear v0 v1 c aMatrix i h0;
 
-%% morbid and working stage
+
+%% morbid and working stage (method 1)
 
 % method 1
 % loop over different value of education. Easy to code but difficult to
 % extend
-%
-% for edu=0:1
-%     v0 = repmat(0,length(par.a),1);
-%     h0 = repmat(0,length(par.a),1);
-% 
-%     aMatrix=repmat(par.a,1,length(par.a));
-% 
-% 
-%     c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + wage(edu);
-%     c(c<0)=nan;
-% 
-%     for i=1:maxInteration
-%         [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
-%         v1 = max(v_t,v_mr);
-%         error = max(abs(v0-v1));
-%         disp(['iteration '  int2str(i)  ': '  num2str(error)]);
-%         if error < maxError;
-%             numberOfIteration_mw = i;
-%             break;
-%         end;
-%         v0=v1;
-%     end;
-% 
-%     v_mw(:,edu+1) = v0;
-%     h_mw(:,edu+1) = h0;
-%     clear h0 v0 v1 c aMatrix i;
-% end;
+
+for j=length(par.edu):-1:1
+    v0 = repmat(0,length(par.a),1);
+    h0 = repmat(0,length(par.a),1);
+
+    aMatrix=repmat(par.a,1,length(par.a));
+
+    c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix' + wage(par.edu(j),par);
+    c(c<0)=nan;
+
+    for i=1:maxInteration
+        [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*(repmat(v0',length(par.a),1)),[],2);
+        v1 = max(v_t,v_mr);
+        error = max(abs(v0-v1));
+        disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+        if error < maxError;
+            numberOfIteration_mw = i;
+            break;
+        end;
+        v0=v1;
+    end;
+
+    v_mw1(:,j) = v0;
+    h_mw1(:,j) = h0;
+    clear h0 v0 v1 c aMatrix i;
+end;
 
 
-
-% method 2 ( easiser to extend )
+%% morbid and working stage (method 2)
 
 % 1st dimension: asset (state variable)
 % 2nd dimension: education (state variable)
@@ -101,7 +100,7 @@ at_plus1_matrix = permute(repmat(par.a,1,length(par.a)),[2 3 1] );
 edu = repmat(par.edu',[ length(par.a) 1 length(par.a) ] );
 
 
-c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 2 1 ]  ) + wage(edu); 
+c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 length(par.edu) 1 ]  ) + wage(edu,par); 
 c(c<0)=nan;
 
 for i=1:maxInteration
@@ -109,8 +108,9 @@ for i=1:maxInteration
     vt_plus1 = repmat(permute(v0,[3 2 1]), [length(par.a) 1 1]) ;
     [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).* vt_plus1 ,[],3  ); 
        
-    v1 = max(v_t,repmat(v_mr,[1 2]));
-    error = max(abs(v0-v1));
+    v1 = max(v_t,repmat(v_mr,[1 length(par.edu)]));
+    error = abs(v0-v1);
+    error = max(error(:));
     disp(['iteration '  int2str(i)  ': '  num2str(error)]);
     if error < maxError;
         numberOfIteration_mw = i;
@@ -119,12 +119,55 @@ for i=1:maxInteration
     v0=v1;
 end;
 
-v_mw = v0;
-h_mw = h0;
+v_mw2 = v0;
+h_mw2 = h0;
 clear h0 v0 v1 c aMatrix i;
 
-%% morbid and schooling stage
 
+%% morbid and schooling stage (method 1)
+
+% method 1
+% loop over different value of education. Easy to code but difficult to
+% extend
+tic;
+for j=length(par.edu):-1:1
+    v0 = repmat(0,length(par.a),1);
+    h0 = repmat(0,length(par.a),1);
+
+    aMatrix=repmat(par.a,1,length(par.a));
+
+    c=(1+par.r)./(1-par.mum).*aMatrix -aMatrix';
+    c(c<0)=nan;
+
+    for i=1:maxInteration
+        if par.edu(j)==par.edu(end)
+            vt_plus1 = (repmat(v0',length(par.a),1));
+        else 
+            vt_plus1 = (repmat(v_ms1(:,j+1)',length(par.a),1));
+        end
+
+        [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*vt_plus1 ,[],2);
+        v1 = max(v_t,v_mw1(:,j) );
+        error = max(abs(v0-v1));
+        disp(['iteration '  int2str(i)  ': '  num2str(error)]);
+        if error < maxError;
+            numberOfIteration_mw = i;
+            break;
+        end;
+        v0=v1;
+        
+    end;
+
+    v_ms1(:,j) = v0;
+
+    h_ms1(:,j) = h0;
+
+    clear h0 v0 v1 c aMatrix i;
+end;
+toc;
+
+%% morbid and schooling stage (method 2)
+tic;
 v0 = repmat(0,[length(par.a) length(par.edu)]); 
 h0 = repmat(0,[length(par.a) length(par.edu)]);
 
@@ -132,7 +175,7 @@ at_Matrix = permute(repmat(par.a,1,length(par.a)),[1 3 2] );
 at_plus1_matrix = permute(repmat(par.a,1,length(par.a)),[2 3 1] );
 edu = repmat(par.edu,[ length(par.a) 1 length(par.a) ] );
 
-c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 2 1 ]) ; 
+c= repmat( (1+par.r)./(1-par.mum).*at_Matrix -at_plus1_matrix, [1 length(par.edu) 1 ]) ; 
 c(c<0)=nan;
 
 
@@ -142,8 +185,11 @@ for i=1:maxInteration
     
     [v_t h0]=max(utility(c)-par.lambdam +par.beta.*(1-par.mum).*vt_plus1  ,[],3  );
        
-    v1 = max(v_t,v_mw);
-    error = max(abs(v0-v1));
+    v1 = max(v_t,v_mw2);
+    
+    error = abs(v0-v1);
+    error = max(error(:));
+
     disp(['iteration '  int2str(i)  ': '  num2str(error)]);
     if error < maxError;
         numberOfIteration_mw = i;
@@ -152,10 +198,12 @@ for i=1:maxInteration
     v0=v1;
 end;
 
-v_ms = v0;
-h_ms = h0;
+v_ms2 = v0;
+h_ms2 = h0;
 clear h0 v0 v1 c aMatrix i;
+% 
 
+toc;
 
 
 
