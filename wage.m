@@ -1,7 +1,7 @@
-function w = wage(e)
-    if (e<=1)
-        w = 0.068*e;
-    else
-        w=0;
-    end
+function w = wage(e,par)
+
+    e(e>=par.max_edu) = par.max_edu;
+
+    w = exp(par.wage*e);
+    
 end
