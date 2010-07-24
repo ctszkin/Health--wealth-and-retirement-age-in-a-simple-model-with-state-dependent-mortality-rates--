@@ -5,7 +5,7 @@ tic
 % parSet(rho,lambdam,lambdah,r,wage,max_edu,muh,mum,theta,sigma,a,edu)
 % default parameter 
 % par = parSet(0.1,0.2,0.2,0.05,0.15,0.001,0.02,0.1,1,(0:0.1:20)');
-par = parSet(0.05,0.3,0.2,0.08,0.1,2,0.001,0.02,0.1,1,(-20:0.5:200)',(0:3)');
+par = parSet(0.05,0.3,0.2,0.08,0.2,2,0.001,0.02,0.1,1,(-20:0.5:200)',(0:3)');
 
 maxInteration = 10000;
 maxError = 10^-6;
@@ -344,7 +344,7 @@ for j=length(par.edu):-1:1
             vt_ms_plus1 = (repmat(v_ms(:,j+1)',length(par.a),1));
         end
 
-        [v_t h0]=max(utility(c)-par.lambdah +par.beta.*(1-par.muh).*vt_plus1 + par.beta*par.theta*vt_ms_plus1 ,[],2);
+        [v_t h0]=max(utility(c)-par.lambdah +par.beta.*(1-par.muh-par.theta ).*vt_plus1 + par.beta*par.theta*vt_ms_plus1 ,[],2);
         v1 = max(v_t,v_hw(:,j) );
         error = max(abs(v0-v1));
 %         disp(['iteration '  int2str(i)  ': '  num2str(error)]);
