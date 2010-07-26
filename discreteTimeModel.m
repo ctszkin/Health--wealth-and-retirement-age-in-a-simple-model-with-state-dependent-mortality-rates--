@@ -406,19 +406,25 @@ toc
 
 
 % compute the critial value;
-[temp critical_point_morbid_schooling]=max(v_ms==v_mw)
-[temp critical_point_morbid_retirement] = max(v_mw==repmat(v_mr,[1 4]))
+[temp critical_point_morbid_schooling]=max(v_ms==v_mw);
+[temp critical_point_morbid_retirement] = max(v_mw==repmat(v_mr,[1 4]));
   
-[temp critical_point_healthy_schooling]=max(v_hs==v_hw)
-[temp critical_point_healthy_retirement] = max(v_hw==repmat(v_hr,[1 4]))
+[temp critical_point_healthy_schooling]=max(v_hs==v_hw);
+[temp critical_point_healthy_retirement] = max(v_hw==repmat(v_hr,[1 4]));
   
-critical_point= [critical_point_morbid_schooling;...
-                    critical_point_morbid_retirement;...
-                    critical_point_healthy_schooling;...
-                    critical_point_healthy_retirement]
+model.par=par;
+
+model.valueFn.healthy_schooling=v_hs;
+model.valueFn.healthy_working=v_hw;
+model.valueFn.healthy_retired=v_hr;
+model.valueFn.morbid_schooling=v_ms;
+model.valueFn.morbid_working=v_mw;
+model.valueFn.morbid_retired=v_mr;
 
 
-save valueFn v_hr v_hw v_hs v_mr v_mw v_ms par;
+model.criticalPoint.healthy_schooling2working=critical_point_healthy_schooling;
+model.criticalPoint.healthy_working2retirement=critical_point_healthy_retirement;
+model.criticalPoint.morbid_schooling2working=critical_point_morbid_schooling;
+model.criticalPoint.morbid_working2retirement=critical_point_morbid_retirement;
 
-
-
+save model1 model;
