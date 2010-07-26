@@ -106,6 +106,7 @@
                 end 
             end
         end
+        result.asset =model.par.a(result.asset)
  end
     
 
