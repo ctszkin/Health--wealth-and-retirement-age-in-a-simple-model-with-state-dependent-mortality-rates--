@@ -1,3 +1,4 @@
+%{
 clc;clear;
 load valueFn
 
@@ -110,8 +111,4 @@ t = 50;
 disp(['Average consumption at time ' int2str(t) ' : ' num2str(simResult.avg_c(t))]);
 disp(['Average wealth at time ' int2str(t) ' : ' num2str(simResult.avg_a(t))]);
 disp(['Population at time ' int2str(t) ' : ' num2str(simResult.pop(t))]);
-
-
-
-
-
+}%
