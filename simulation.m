@@ -1,3 +1,31 @@
+clc;clear;
+load model1;
+
+% a benchmark case
+state=[10 10];
+result = agentDecision(state,model);
+
+fprintf( ' %s \t%s\t%s\t%s\t%s\n' ,'Age' ,  'Health',  'Status' ,  'Assest' ,  'Year_of_education')
+for i = 1:size(result.age,1)
+    fprintf( '%i \t %i \t %i \t %3.1f \t %i \n', result.age(i),result.health(i),result.status(i), result.asset(i)/1, result.yearOfEducation(i))
+end
+
+
+% simulate for m agent
+m=10;
+result_cell = cell(m,1);
+state_mat = stateGen(model.par,m);
+for i =1:m
+    result_cell{i} = agentDecision(state_mat(i,:),model);
+end
+
+%look at a particular agent
+result = result_cell{5};
+fprintf( ' \n%s \t%s\t%s\t%s\t%s\n' ,'Age' ,  'Health',  'Status' ,  'Assest' ,  'Year_of_education')
+for i = 1:size(result.age,1)
+    fprintf( '%i \t %i \t %i \t %3.1f \t %i \n', result.age(i),result.health(i),result.status(i), result.asset(i)/1, result.yearOfEducation(i))
+end
+
 %{
 clc;clear;
 load valueFn
@@ -111,4 +139,6 @@ t = 50;
 disp(['Average consumption at time ' int2str(t) ' : ' num2str(simResult.avg_c(t))]);
 disp(['Average wealth at time ' int2str(t) ' : ' num2str(simResult.avg_a(t))]);
 disp(['Population at time ' int2str(t) ' : ' num2str(simResult.pop(t))]);
-}%
+
+%}
+
