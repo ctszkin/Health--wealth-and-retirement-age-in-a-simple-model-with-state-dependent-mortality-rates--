@@ -421,10 +421,17 @@ model.valueFn.morbid_schooling=v_ms;
 model.valueFn.morbid_working=v_mw;
 model.valueFn.morbid_retired=v_mr;
 
-
 model.criticalPoint.healthy_schooling2working=critical_point_healthy_schooling;
 model.criticalPoint.healthy_working2retirement=critical_point_healthy_retirement;
 model.criticalPoint.morbid_schooling2working=critical_point_morbid_schooling;
 model.criticalPoint.morbid_working2retirement=critical_point_morbid_retirement;
+
+model.policyFn.healthy_schooling=h_hs;
+model.policyFn.healthy_working=h_hw;
+model.policyFn.healthy_retired=h_hr;
+model.policyFn.morbid_schooling=h_ms;
+model.policyFn.morbid_working=h_mw;
+model.policyFn.morbid_retired=h_mr;
+
 
 save model1 model;
